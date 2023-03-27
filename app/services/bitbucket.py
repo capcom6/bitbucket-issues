@@ -38,7 +38,7 @@ class BitBucketService:
 
             yield from resp["values"]
 
-            if not "next" in resp:
+            if "next" not in resp:
                 break
 
             page += 1
