@@ -1,7 +1,9 @@
 import typing
 
 import fastapi
+from fastapi.responses import HTMLResponse
 
+from app.api.domain import Issue
 from app.core.config import settings
 from app.services.bitbucket import BitBucketService
 from app.services.issues import IssuesService, Priority
@@ -15,14 +17,17 @@ bitbucket_svc = BitBucketService(
 issues_svc = IssuesService(bitbucket_svc)
 
 
-@router.get("/")
+@router.get("/", response_class=HTMLResponse)
 async def index():
-    return {}
+    with open("static/index.html", "r") as html:
+        return HTMLResponse(content=html.read())
 
 
-@router.get("/issues")
+@router.get("/api/v1/issues", response_model=typing.List[Issue])
 async def issues(
     priority: typing.Union[Priority, None] = None,
     assignee: typing.Union[str, None] = None,
+    *,
+    tasks: fastapi.BackgroundTasks
 ):
     return await issues_svc.select(priority=priority, assignee=assignee)

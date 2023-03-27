@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Projects Tasks</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css"
+        integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+    <div class="container-fluid mt-3" id="app">
+        <h1>Projects Tasks</h1>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Repository Name</th>
+                    <th>Title</th>
+                    <th @click="sort('priority')" :class="{ active: sortColumn === 'priority' }">Priority <span
+                            v-if="sortColumn === 'priority'"
+                            :class="{ 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }"></span></th>
+                    <th @click="sort('kind')" :class="{ active: sortColumn === 'kind' }">Kind <span
+                            v-if="sortColumn === 'kind'"
+                            :class="{ 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }"></span></th>
+                    <th @click="sort('created_on')" :class="{ active: sortColumn === 'created_on' }">Created on <span
+                            v-if="sortColumn === 'created_on'"
+                            :class="{ 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }"></span>
+                    </th>
+                    <th>Assignee User Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="item in sortedItems">
+                    <td>{{ item.repository.name }}</td>
+                    <td><a :href="item.links.html.href">{{ item.title }}</a></td>
+                    <td>
+                        <span v-if="item.priority == 'major'"><i class="fas fa-exclamation-circle text-danger"></i>
+                            major</span>
+                        <span v-if="item.priority == 'critical'"><i
+                                class="fas fa-exclamation-triangle text-warning"></i> critical</span>
+                        <span v-if="item.priority == 'blocker'"><i class="fas fa-ban text-danger"></i> blocker</span>
+                    </td>
+                    <td>
+                        <span v-if="item.kind == 'task'"><i class="fas fa-tasks text-primary"></i> task</span>
+                        <span v-if="item.kind == 'bug'"><i class="fas fa-bug text-warning"></i> bug</span>
+                        <span v-if="item.kind == 'proposal'"><i class="fas fa-comment-alt text-info"></i>
+                            proposal</span>
+                        <span v-if="item.kind == 'enhancement'"><i class="fas fa-lightbulb text-success"></i>
+                            enhancement</span>
+                    </td>
+                    <td>{{ formatDate(item.created_on) }}</td>
+                    <td><span v-if="item.assignee">{{ item.assignee.name }}</span><span v-else>N/A</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const app = new Vue({
+            el: '#app',
+            data: {
+                items: [],
+                sortColumn: 'created_on',
+                reverseSort: false,
+            },
+            created: function () {
+                // Load data from API endpoint
+                axios.get("/api/v1/issues")
+                    .then(response => {
+                        this.items = response.data;
+                    })
+                    .catch(error => {
+                        console.log(error);
+                    });
+            },
+            methods: {
+                formatDate: function (dateStr) {
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                },
+                sort: function (column) {
+                    if (column === this.sortColumn) {
+                        this.reverseSort = !this.reverseSort;
+                    } else {
+                        this.sortColumn = column;
+                        this.reverseSort = false;
+                    }
+                }
+            },
+            computed: {
+                sortedItems: function () {
+                    const col = this.sortColumn;
+                    const order = this.reverseSort ? -1 : 1;
+
+                    return this.items.sort(function (a, b) {
+                        let va = a[col];
+                        let vb = b[col];
+
+                        if (typeof va === 'string') {
+                            va = va.toLowerCase();
+                            vb = vb.toLowerCase();
+                        }
+
+                        if (va < vb) {
+                            return -1 * order;
+                        } else if (va > vb) {
+                            return 1 * order;
+                        } else {
+                            return 0;
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
