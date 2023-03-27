@@ -1,7 +1,7 @@
 import os
 import typing
-import dotenv
 
+import dotenv
 import pydantic
 import yaml
 from pydantic.env_settings import SettingsSourceCallable
@@ -11,7 +11,7 @@ dotenv.load_dotenv()
 
 def yaml_config_settings_source(
     settings: pydantic.BaseSettings,
-) -> dict[str, typing.Any]:
+) -> typing.Dict[str, typing.Any]:
     encoding = settings.__config__.env_file_encoding
     filename = os.environ.get("CONFIG_FILE", "config.yml")
     print(filename)
@@ -25,7 +25,7 @@ def yaml_config_settings_source(
 class BitBucket(pydantic.BaseModel):
     login: str
     password: pydantic.SecretStr
-    owner: str | None
+    owner: typing.Union[str, None]
 
 
 class Settings(pydantic.BaseSettings):
