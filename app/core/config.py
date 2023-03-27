@@ -14,7 +14,6 @@ def yaml_config_settings_source(
 ) -> typing.Dict[str, typing.Any]:
     encoding = settings.__config__.env_file_encoding
     filename = os.environ.get("CONFIG_FILE", "config.yml")
-    print(filename)
     if not os.path.exists(filename):
         return {}
 

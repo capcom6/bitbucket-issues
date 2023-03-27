@@ -42,8 +42,8 @@ setup:
 
 .PHONY: build
 build:
-	docker build -t $(PROJECT_NAME) .
+	docker build -f ./package/Dockerfile -t $(PROJECT_NAME) .
 
 .PHONY: docker-run
 docker-run:
-	docker run -p 8000:8000 $(PROJECT_NAME)
+	docker run --name $(PROJECT_NAME) --rm -p 8000:8000 $(PROJECT_NAME)
