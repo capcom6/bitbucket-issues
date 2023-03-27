@@ -4,7 +4,7 @@ PIP=pip
 PROJECT_NAME=bitbucket-issues
 APP_NAME=app
 MODULE=api
-ENV_PATH=.venv
+ENV_PATH=venv
 
 # Commands
 .PHONY: install
