@@ -1,6 +1,7 @@
 import datetime
 import enum
-from typing import Union
+import typing
+
 import pydantic
 
 
@@ -37,7 +38,7 @@ class Link(pydantic.BaseModel):
 class Repository(pydantic.BaseModel):
     name: str
     uuid: str
-    links: dict[str, Link]
+    links: typing.Dict[str, Link]
 
 
 class User(pydantic.BaseModel):
@@ -64,7 +65,7 @@ class Issue(pydantic.BaseModel):
     votes: int
 
     repository: Repository
-    links: dict[str, Link]
+    links: typing.Dict[str, Link]
     content: IssueContent
     reporter: User
-    assignee: Union[User, None]
+    assignee: typing.Union[User, None]
