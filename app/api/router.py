@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.services.bitbucket import BitBucketService
 from app.services.issues import IssuesService, Priority
 
+print(settings)
 router = fastapi.APIRouter()
 bitbucket_svc = BitBucketService(
     settings.bitbucket.login,
@@ -17,13 +18,19 @@ bitbucket_svc = BitBucketService(
 issues_svc = IssuesService(bitbucket_svc)
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def index():
     with open("static/index.html", "r") as html:
         return HTMLResponse(content=html.read())
 
 
-@router.get("/api/v1/issues", response_model=typing.List[Issue])
+@router.get(
+    "/api/v1/issues",
+    response_model=typing.List[Issue],
+    tags=["Issues"],
+    summary="Get issues",
+    description="Returns issues with filter",
+)
 async def issues(
     priority: typing.Union[Priority, None] = None,
     assignee: typing.Union[str, None] = None,

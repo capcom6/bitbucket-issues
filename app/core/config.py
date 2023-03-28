@@ -1,3 +1,4 @@
+import datetime
 import os
 import typing
 
@@ -27,8 +28,20 @@ class BitBucket(pydantic.BaseModel):
     owner: typing.Union[str, None]
 
 
+class Issues(pydantic.BaseModel):
+    ttl: datetime.timedelta = datetime.timedelta(hours=6)
+    repositories_filter: typing.Union[str, None] = pydantic.Field(
+        "", alias="repositoriesFilter"
+    )
+    issues_filter: str = pydantic.Field(
+        '(state = "new" OR state = "open" OR state = "on hold") AND (priority = "major" OR priority = "critical" OR priority = "blocker")',
+        alias="issuesFilte",
+    )
+
+
 class Settings(pydantic.BaseSettings):
     bitbucket: BitBucket
+    issues: Issues = Issues()
 
     class Config:
         env_file = ".env"
