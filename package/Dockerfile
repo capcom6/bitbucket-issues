@@ -26,7 +26,7 @@ COPY --from=build /usr/local/bin/ /usr/local/bin/
 COPY scripts/docker-entrypoint.sh scripts/docker-healthcheck.sh ./
 RUN chmod +x ./docker-entrypoint.sh ./docker-healthcheck.sh
 
-# COPY static ./static
+COPY static ./static
 # COPY templates ./templates
 COPY app ./app
 

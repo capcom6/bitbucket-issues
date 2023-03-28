@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Projects Tasks</title>
+    <title>Issues</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css"
@@ -14,8 +14,15 @@
 
 <body>
     <div class="container-fluid mt-3" id="app">
-        <h1>Projects Tasks</h1>
-        <table class="table table-bordered table-striped">
+        <h1>Issues</h1>
+        <div class="header">
+            <div class="count">{{ items.length }} Issues</div>
+            <div class="filters">
+                <button class="btn btn-primary" @click="clearFilters">{{ currentFilter || 'No filters' }}</button>
+            </div>
+        </div>
+        <div v-if="loading">Loading...</div> <!-- add a loading indicator here -->
+        <table v-if="!loading" class="table table-bordered table-striped">
             <thead>
                 <tr>
                     <th>Repository Name</th>
@@ -36,13 +43,16 @@
             <tbody>
                 <tr v-for="item in sortedItems">
                     <td>{{ item.repository.name }}</td>
-                    <td><a :href="item.links.html.href">{{ item.title }}</a></td>
+                    <td><a :href="item.links.html.href" target="_blank">{{ item.title }}</a></td>
                     <td>
-                        <span v-if="item.priority == 'major'"><i class="fas fa-exclamation-circle text-danger"></i>
-                            major</span>
-                        <span v-if="item.priority == 'critical'"><i
-                                class="fas fa-exclamation-triangle text-warning"></i> critical</span>
-                        <span v-if="item.priority == 'blocker'"><i class="fas fa-ban text-danger"></i> blocker</span>
+                        <a @click="fetchIssues({priority: item.priority})">
+                            <span v-if="item.priority == 'major'"><i class="fas fa-exclamation-circle text-danger"></i>
+                                major</span>
+                            <span v-if="item.priority == 'critical'"><i
+                                    class="fas fa-exclamation-triangle text-warning"></i> critical</span>
+                            <span v-if="item.priority == 'blocker'"><i class="fas fa-ban text-danger"></i>
+                                blocker</span>
+                        </a>
                     </td>
                     <td>
                         <span v-if="item.kind == 'task'"><i class="fas fa-tasks text-primary"></i> task</span>
@@ -53,11 +63,32 @@
                             enhancement</span>
                     </td>
                     <td>{{ formatDate(item.created_on) }}</td>
-                    <td><span v-if="item.assignee">{{ item.assignee.name }}</span><span v-else>N/A</span></td>
+                    <td><a v-if="item.assignee" @click="fetchIssues({assignee: item.assignee.uuid})">
+                            {{ item.assignee.display_name }}
+                        </a><span v-else>N/A</span>
+                    </td>
                 </tr>
             </tbody>
         </table>
     </div>
+
+    <style>
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .count {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .filters {
+            margin-left: auto;
+        }
+    </style>
 
     <script>
         const app = new Vue({
@@ -66,18 +97,33 @@
                 items: [],
                 sortColumn: 'created_on',
                 reverseSort: false,
+                filter: {},
+                loading: false,
             },
             created: function () {
                 // Load data from API endpoint
-                axios.get("/api/v1/issues")
-                    .then(response => {
-                        this.items = response.data;
-                    })
-                    .catch(error => {
-                        console.log(error);
-                    });
+                this.fetchIssues();
             },
             methods: {
+                clearFilters: function () {
+                    this.filter = {};
+                    this.fetchIssues();
+                },
+                fetchIssues: function (filter) {
+                    this.loading = true;
+                    this.filter = { ...this.filter, ...(filter || {}) };
+                    // Load data from API endpoint
+                    axios.get("/api/v1/issues", { params: this.filter })
+                        .then(response => {
+                            this.items = response.data;
+                        })
+                        .catch(error => {
+                            console.log(error);
+                        })
+                        .finally(() => {
+                            this.loading = false; // update the loading state to false after receiving the response
+                        });
+                },
                 formatDate: function (dateStr) {
                     const date = new Date(dateStr);
                     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
@@ -113,6 +159,14 @@
                             return 0;
                         }
                     });
+                },
+                currentFilter: function () {
+                    const columns = Object.keys(this.filter);
+                    if (columns.length === 0) {
+                        return null;
+                    }
+
+                    return `Filtered by ` + columns.join(', ');
                 }
             }
         });
