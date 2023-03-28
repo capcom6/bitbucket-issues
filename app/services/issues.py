@@ -1,4 +1,6 @@
+import asyncio
 import datetime
+import threading
 import typing
 from enum import Enum
 
@@ -30,6 +32,7 @@ class IssuesService:
             or '(state = "new" OR state = "open" OR state = "on hold") AND (priority = "major" OR priority = "critical" OR priority = "blocker")'
         )
 
+        self._sync_lock = threading.Lock()
         self._issues = []
         self._issues_time = 0
 
@@ -45,29 +48,38 @@ class IssuesService:
                 or (not i["assignee"] is None and i["assignee"]["uuid"] == assignee)
             )
 
-        issues = filter(filter_fn, self._load())
+        issues = filter(filter_fn, await self._load())
 
         return sorted(issues, key=lambda i: i["created_on"])
 
-    def _load(self) -> typing.List[dict]:
+    async def _load(self) -> typing.List[dict]:
         if datetime.datetime.now().timestamp() < self._issues_time + self._ttl.seconds:
             return self._issues
 
-        issues = [
-            issue
-            for repo in self._client.select_repositories(
-                params={
-                    "q": "has_issues = True"
-                    if len(self._repos_filter) == 0
-                    else f"(has_issues = True) AND {self._repos_filter}"
-                }
-            )
-            for issue in self._client.select_issues(
-                repo["uuid"],
-                params={"q": self._issues_filter},
-            )
-        ]
-        self._issues = issues
-        self._issues_time = datetime.datetime.now().timestamp()
+        # logging.warning(f"Starting from {threading.current_thread().name}")
+        asyncio.get_event_loop().run_in_executor(None, self._sync)
 
-        return issues
+        return self._issues
+
+    def _sync(self):
+        # logging.warning(f"Executing on {threading.current_thread().name}")
+        if self._sync_lock.locked():
+            return
+
+        with self._sync_lock:
+            issues = [
+                issue
+                for repo in self._client.select_repositories(
+                    params={
+                        "q": "has_issues = True"
+                        if len(self._repos_filter) == 0
+                        else f"(has_issues = True) AND {self._repos_filter}"
+                    }
+                )
+                for issue in self._client.select_issues(
+                    repo["uuid"],
+                    params={"q": self._issues_filter},
+                )
+            ]
+            self._issues = issues
+            self._issues_time = datetime.datetime.now().timestamp()
