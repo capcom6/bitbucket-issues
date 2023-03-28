@@ -39,9 +39,14 @@ class Issues(pydantic.BaseModel):
     )
 
 
+class Storage(pydantic.BaseModel):
+    dsn: pydantic.RedisDsn = pydantic.Field("redis://localhost:6379/0")
+
+
 class Settings(pydantic.BaseSettings):
     bitbucket: BitBucket
-    issues: Issues = Issues()
+    issues: Issues = Issues()  # type: ignore
+    storage: Storage = Storage()  # type: ignore
 
     class Config:
         env_file = ".env"

@@ -6,3 +6,5 @@ issues:
   ttl: P6H
   repositoriesFilter:
   issuesFilter: (state = "new" OR state = "open" OR state = "on hold") AND (priority = "major" OR priority = "critical" OR priority = "blocker")
+storage:
+  dsn: redis://localhost:6379/0
