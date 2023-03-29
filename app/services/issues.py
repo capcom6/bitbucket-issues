@@ -3,6 +3,9 @@ import datetime
 import threading
 import typing
 from enum import Enum
+from app.core.decorators import run_in_background
+
+from app.storage.repositories import IssuesRepository
 
 from .bitbucket import BitBucketService
 
@@ -19,12 +22,15 @@ class IssuesService:
     def __init__(
         self,
         bitbucket: BitBucketService,
+        issues: IssuesRepository,
         *,
         ttl: typing.Union[datetime.timedelta, None] = None,
         repos_filter: typing.Union[str, None] = None,
         issues_filter: typing.Union[str, None] = None,
     ) -> None:
         self._client = bitbucket
+        self._repo = issues
+
         self._ttl = ttl or datetime.timedelta(hours=6)
         self._repos_filter = repos_filter or ""
         self._issues_filter = (
@@ -42,13 +48,19 @@ class IssuesService:
         priority: typing.Union[Priority, None] = None,
         assignee: typing.Union[str, None] = None,
     ) -> typing.List[dict]:
-        def filter_fn(i: dict) -> bool:
-            return (priority is None or i["priority"] == priority.value) and (
-                assignee is None
-                or (not i["assignee"] is None and i["assignee"]["uuid"] == assignee)
-            )
+        # def filter_fn(i: dict) -> bool:
+        #     return (priority is None or i["priority"] == priority.value) and (
+        #         assignee is None
+        #         or (not i["assignee"] is None and i["assignee"]["uuid"] == assignee)
+        #     )
 
-        issues = filter(filter_fn, await self._load())
+        # issues = filter(filter_fn, await self._load())
+        if not await self._repo.exists():
+            self._sync()
+
+        issues = await self._repo.select(
+            priority=priority.value if priority else None, assignee=assignee
+        )
 
         return sorted(issues, key=lambda i: i["created_on"])
 
@@ -61,6 +73,7 @@ class IssuesService:
 
         return self._issues
 
+    @run_in_background
     def _sync(self):
         # logging.warning(f"Executing on {threading.current_thread().name}")
         if self._sync_lock.locked():
@@ -81,5 +94,7 @@ class IssuesService:
                     params={"q": self._issues_filter},
                 )
             ]
+            # так делать нельзя, потому что соединени с Redis уже привязано к основному циклу событий
+            asyncio.run(self._repo.replace(issues))
             self._issues = issues
             self._issues_time = datetime.datetime.now().timestamp()
