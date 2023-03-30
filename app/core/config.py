@@ -29,7 +29,6 @@ class BitBucket(pydantic.BaseModel):
 
 
 class Issues(pydantic.BaseModel):
-    ttl: datetime.timedelta = datetime.timedelta(hours=6)
     repositories_filter: typing.Union[str, None] = pydantic.Field(
         "", alias="repositoriesFilter"
     )
@@ -41,6 +40,7 @@ class Issues(pydantic.BaseModel):
 
 class Storage(pydantic.BaseModel):
     dsn: pydantic.RedisDsn = pydantic.Field("redis://localhost:6379/0")
+    ttl: datetime.timedelta = datetime.timedelta(hours=6)
 
 
 class Settings(pydantic.BaseSettings):

@@ -1,5 +1,5 @@
-from .connection import connect
+from .connection import create_issues_repository
 
 __all__ = [
-    "connect",
+    "create_issues_repository",
 ]
