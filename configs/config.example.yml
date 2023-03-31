@@ -6,5 +6,5 @@ issues: # issues loading settings
   repositoriesFilter: # repositories filter, see https://developer.atlassian.com/cloud/bitbucket/rest/intro/#filtering
   issuesFilter: (state = "new" OR state = "open" OR state = "on hold") AND (priority = "major" OR priority = "critical" OR priority = "blocker") # issues filter
 storage: # cache storage settings
-  dsn: redis://localhost:6379/0 # memory:// and redis:// supported
+  dsn: memory:// # memory:// and redis:// supported
   ttl: PT6H # cache duration, ISO 8601
