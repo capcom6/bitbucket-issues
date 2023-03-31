@@ -1,12 +1,11 @@
-import asyncio
 import datetime
-import logging
 import threading
 import typing
 from enum import Enum
-from app.core.decorators import run_in_background
 
-from app.storage.repositories import IssuesRepository, RedisIssuesRepository
+from app.core import logger
+from app.core.decorators import run_in_background
+from app.storage.repositories import IssuesRepository
 
 from .bitbucket import BitBucketService
 
@@ -61,7 +60,7 @@ class IssuesService:
         if self._sync_lock.locked():
             return
 
-        logging.warning(f"Sync on {threading.current_thread().name}")
+        logger.info(f"Sync on {threading.current_thread().name} started")
         with self._sync_lock:
             issues = [
                 issue
@@ -81,4 +80,5 @@ class IssuesService:
             self._repo.replace(issues)
             self._issues = issues
             self._issues_time = datetime.datetime.now().timestamp()
-            logging.warning(f"Sync complete")
+
+        logger.info(f"Sync on {threading.current_thread().name} finished")

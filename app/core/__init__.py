@@ -1,7 +1,7 @@
 from .config import settings
-from .logger import setup_logging
+from .logger import logger
 
 __all__ = [
     "settings",
-    "setup_logging",
+    "logger",
 ]

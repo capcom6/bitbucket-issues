@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
+
 from .router import router
 
 server = FastAPI()

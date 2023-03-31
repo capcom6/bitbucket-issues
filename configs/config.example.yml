@@ -1,10 +1,10 @@
-bitbucket:
-  login: login
-  password: password
-  owner: owner
-issues:
-  repositoriesFilter:
-  issuesFilter: (state = "new" OR state = "open" OR state = "on hold") AND (priority = "major" OR priority = "critical" OR priority = "blocker")
-storage:
-  dsn: redis://localhost:6379/0
-  ttl: PT6H
+bitbucket: # BitBucket access settings
+  login: login # user login
+  password: password # app password
+  owner: owner # repositories owner
+issues: # issues loading settings
+  repositoriesFilter: # repositories filter, see https://developer.atlassian.com/cloud/bitbucket/rest/intro/#filtering
+  issuesFilter: (state = "new" OR state = "open" OR state = "on hold") AND (priority = "major" OR priority = "critical" OR priority = "blocker") # issues filter
+storage: # cache storage settings
+  dsn: redis://localhost:6379/0 # memory:// and redis:// supported
+  ttl: PT6H # cache duration, ISO 8601

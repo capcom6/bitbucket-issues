@@ -3,8 +3,6 @@ import functools
 
 import click
 
-from app.core.logger import setup_logging
-
 
 def make_sync(func):
     @functools.wraps(func)
@@ -16,7 +14,6 @@ def make_sync(func):
 
 @click.group()
 def cli():
-    setup_logging()
     pass
 
 
