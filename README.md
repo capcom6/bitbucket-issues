@@ -59,7 +59,7 @@
 - [Usage](#usage)
   - [How it works](#how-it-works)
   - [Configuration](#configuration)
-  - [Secutiry](#secutiry)
+  - [Security](#security)
   - [Release notes](#release-notes)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
@@ -150,7 +150,7 @@ storage: # Cache storage settings
   ttl: PT6H # The TTL (Time-To-Live) for cached items, specified in ISO 8601 duration format.
 ```
 
-### Secutiry
+### Security
 
 The application does not include any built-in authorization or authentication mechanism. To enhance security, it is recommended to use an external service or tool, such as Nginx, to provide basic authentication and restrict access to the application. Alternatively, deploying the application in a private network can provide an additional layer of security and help prevent unauthorized access from external sources.
 
