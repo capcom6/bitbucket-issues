@@ -70,7 +70,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+[![Product Name Screen Shot][product-screenshot]](https://github.com/capcom6/bitbucket-issues)
 
 The project was created in response to a common problem faced by teams using BitBucket to manage their code repositories: how to keep track of issues across multiple repositories.
 
@@ -246,9 +246,7 @@ Project Link: [https://github.com/capcom6/bitbucket-issues](https://github.com/c
 [issues-url]: https://github.com/capcom6/bitbucket-issues/issues
 [license-shield]: https://img.shields.io/github/license/capcom6/bitbucket-issues.svg?style=for-the-badge
 [license-url]: https://github.com/capcom6/bitbucket-issues/blob/master/LICENSE.txt
-[product-screenshot]: assets/ui.png
-[http-alert]: assets/http-alert.png
-[tcp-alert]: assets/tcp-alert.png
+[product-screenshot]: https://github.com/capcom6/bitbucket-issues/raw/master/assets/ui.png
 [Python]: https://img.shields.io/badge/Python-000000?style=for-the-badge&logo=python&logoColor=white
 [Python-url]: https://python.org/
 [Redis]: https://img.shields.io/badge/Redis-000000?style=for-the-badge&logo=redis&logoColor=white
