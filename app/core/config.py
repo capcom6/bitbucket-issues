@@ -38,8 +38,14 @@ class Issues(pydantic.BaseModel):
     )
 
 
+class StorageDsn(pydantic.AnyHttpUrl):
+    __slots__ = ()
+    allowed_schemes = {"memory", "redis", "rediss"}
+    host_required = False
+
+
 class Storage(pydantic.BaseModel):
-    dsn: pydantic.RedisDsn = pydantic.Field("redis://localhost:6379/0")
+    dsn: StorageDsn = pydantic.Field("memory://")
     ttl: datetime.timedelta = datetime.timedelta(hours=6)
 
 
