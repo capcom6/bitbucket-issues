@@ -1,6 +1,6 @@
 bitbucket: # BitBucket access settings
-  login: login # user login
-  password: password # app password
+  login: login # user name, not e-mail, see https://bitbucket.org/account/settings/
+  password: password # app password with account, repositories and issues read permission, see https://bitbucket.org/account/settings/app-passwords/
   owner: owner # repositories owner
 issues: # issues loading settings
   repositoriesFilter: # repositories filter, see https://developer.atlassian.com/cloud/bitbucket/rest/intro/#filtering

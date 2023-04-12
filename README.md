@@ -108,8 +108,8 @@ To run the app with Docker, you will need to have Docker installed on your syste
 
 ### Installation
 
-1. Create an application password for your BitBucket account, if you haven't already done so. You can do this by going to your BitBucket account settings and selecting "App passwords" from the sidebar. Follow the prompts to create a new application password with the necessary permissions for accessing your repositories and issues.
-2. Copy the default [config.example.yml](./configs/config.example.yml) file located in the configs folder, and rename it to `config.yml`. Update the values in the config.yml file with your BitBucket username, password, and other settings as needed. Alternatively, you can create a new `config.yml` file from scratch, using the format described in the [Configuration](#configuration) section.
+1. Create an [application password](https://bitbucket.org/account/settings/app-passwords/) for your BitBucket account with permissions to read your account, repositories, and issues.
+2. Copy the default [config.example.yml](./configs/config.example.yml) file and rename it to `config.yml`. Update the values in the `config.yml` file with your BitBucket username, password, and other settings as needed. Alternatively, you can create a new `config.yml` file from scratch, using the format described in the [Configuration](#configuration) section.
 3. Run the Docker container with the `capcom6/bitbucket-issues` image, and expose port 8000 to access the web interface. You can do this by running the following command: `docker run -d -p 8000:8000 -v $(pwd)/config.yml:/app/config.yml capcom6/bitbucket-issues:latest`
 
 This command will start the Docker container and mount your custom `config.yml` file as a volume in the container. The container will listen on port 8000, which you can access in your web browser by navigating to http://localhost:8000 or http://&lt;docker-machine-ip&gt;:8000, depending on your Docker setup.
