@@ -10,13 +10,17 @@
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script src="https://unpkg.com/vue-multiselect@2.1.6"></script>
+    <link rel="stylesheet" href="https://unpkg.com/vue-multiselect@2.1.6/dist/vue-multiselect.min.css">
+
 </head>
 
 <body>
     <div class="container-fluid mt-3" id="app">
         <h1>Issues</h1>
         <div class="header">
-            <div class="count">{{ items.length }} Issues</div>
+            <div class="count">{{ filteredItems.length }} Issues</div>
             <div class="filters">
                 <button class="btn btn-primary" @click="clearFilters">{{ currentFilter || 'No filters' }}</button>
             </div>
@@ -29,7 +33,14 @@
                     <th>Title</th>
                     <th @click="sort('priority')" :class="{ active: sortColumn === 'priority' }">Priority <span
                             v-if="sortColumn === 'priority'"
-                            :class="{ 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }"></span></th>
+                            :class="{ 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }"></span>
+
+                        <div>
+                            <multiselect v-model="selectedPriorities" :options="priorities" :multiple="true"
+                                @input="filterIssues">
+                            </multiselect>
+                        </div>
+                    </th>
                     <th @click="sort('kind')" :class="{ active: sortColumn === 'kind' }">Kind <span
                             v-if="sortColumn === 'kind'"
                             :class="{ 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }"></span></th>
@@ -37,11 +48,22 @@
                             v-if="sortColumn === 'created_on'"
                             :class="{ 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }"></span>
                     </th>
-                    <th>Assignee User Name</th>
+                    <th>Assignee User Name
+                        <div>
+                            <select v-model="selectedAssignee" @change="filterIssues()">
+                                <option value="all">not chosen</option>
+                                <option v-bind:value="null">N/A</option>
+                                <option v-for="(value, key) in assignees" v-bind:value="key">
+                                    {{ value }}
+                                </option>
+                            </select>
+                        </div>
+                    </th>
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="item in sortedItems">
+                <!-- sortedItems -->
+                <tr v-for="item in filteredItems">
                     <td>{{ item.repository.name }}</td>
                     <td><a :href="item.links.html.href" target="_blank">{{ item.title }}</a></td>
                     <td>
@@ -95,13 +117,17 @@
             el: '#app',
             data: {
                 items: [],
+                filteredItems: [],
+                assignees: {},
+                selectedAssignee: 'all',
+                priorities: [],
+                selectedPriorities: [],
                 sortColumn: 'created_on',
                 reverseSort: false,
                 filter: {},
                 loading: false,
             },
             created: function () {
-                // Load data from API endpoint
                 this.fetchIssues();
             },
             methods: {
@@ -111,18 +137,57 @@
                 },
                 fetchIssues: function (filter) {
                     this.loading = true;
-                    this.filter = { ...this.filter, ...(filter || {}) };
-                    // Load data from API endpoint
+
                     axios.get("/api/v1/issues", { params: this.filter })
                         .then(response => {
                             this.items = response.data;
+                            this.filteredItems = this.items;
+
+                            this.items.forEach(item => {
+                                if (!item.assignee) {
+                                    return;
+                                }
+
+                                if (item.assignee.uuid in this.assignees) {
+                                    return;
+                                }
+
+                                this.assignees[item.assignee.uuid] = item.assignee.display_name;
+                            });
+
+                            const uniquePriorities = new Set();
+
+                            this.items.forEach(item => {
+                                uniquePriorities.add(item.priority);
+                            });
+
+                            uniquePriorities.forEach((priority) => this.priorities.push(priority));
                         })
                         .catch(error => {
                             console.log(error);
                         })
                         .finally(() => {
-                            this.loading = false; // update the loading state to false after receiving the response
+                            this.loading = false;
                         });
+                },
+                filterIssues: function () {
+                    this.filteredItems = this.items;
+
+                    if (this.selectedPriorities.length) {
+                        this.filteredItems = this.filteredItems.filter((item) => this.selectedPriorities.includes(item.priority));
+                    }
+
+                    if (!this.selectedAssignee) {
+                        this.filteredItems = this.filteredItems.filter((item) => !item.assignee);
+                    }
+
+                    if (this.selectedAssignee && this.selectedAssignee !== 'all') {
+                        this.filteredItems = this.filteredItems.filter((item) => {
+                            if (item.assignee) {
+                                return item.assignee.uuid === this.selectedAssignee;
+                            }
+                        })
+                    }
                 },
                 formatDate: function (dateStr) {
                     const date = new Date(dateStr);
@@ -170,6 +235,7 @@
                 }
             }
         });
+        Vue.component('multiselect', window.VueMultiselect.default)
     </script>
 </body>
 
