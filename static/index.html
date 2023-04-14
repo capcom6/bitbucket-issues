@@ -31,8 +31,8 @@
                 <tr>
                     <th>Repository Name</th>
                     <th>Title</th>
-                    <th @click="sort('priority')" :class="{ active: sortColumn === 'priority' }">Priority <span
-                            v-if="sortColumn === 'priority'"
+                    <th style="width: 300px;" @click="sort('priority')" :class="{ active: sortColumn === 'priority' }">
+                        Priority <span v-if="sortColumn === 'priority'"
                             :class="{ 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }"></span>
 
                         <div>
@@ -64,7 +64,8 @@
             <tbody>
                 <!-- sortedItems -->
                 <tr v-for="item in filteredItems">
-                    <td>{{ item.repository.name }}</td>
+                    <td><a :href="item.repository.links.html.href + '/issues'" target="_blank">{{
+                            item.repository.name }}</a></td>
                     <td><a :href="item.links.html.href" target="_blank">{{ item.title }}</a></td>
                     <td>
                         <a @click="fetchIssues({priority: item.priority})" href="#">
