@@ -35,8 +35,9 @@
                         <span v-if="sortColumn === 'title'"
                             :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
                     </th>
-                    <th style="width: 300px;" @click="sort('priority')" :class="{ active: sortColumn === 'priority' }">
-                        Priority <span v-if="sortColumn === 'priority'"
+                    <th style="width: 300px;" @click="sort('priorityValue')"
+                        :class="{ active: sortColumn === 'priorityValue' }">
+                        Priority <span v-if="sortColumn === 'priorityValue'"
                             :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
                         <div>
                             <multiselect v-model="selectedPriorities" :options="priorities" :multiple="true">
@@ -148,6 +149,28 @@
                             this.items = response.data;
 
                             this.items.forEach(item => {
+                                let priorityValue;
+
+                                switch (item.priority) {
+                                    case 'trivial':
+                                        priorityValue = 1;
+                                        break;
+                                    case 'minor':
+                                        priorityValue = 2;
+                                        break;
+                                    case 'major':
+                                        priorityValue = 3;
+                                        break;
+                                    case 'critical':
+                                        priorityValue = 4;
+                                        break;
+                                    case 'blocker':
+                                        priorityValue = 5;
+                                        break;
+                                }
+
+                                item.priorityValue = priorityValue;
+
                                 if (!item.assignee) {
                                     return;
                                 }
