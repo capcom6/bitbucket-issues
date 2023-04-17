@@ -19,12 +19,15 @@
     <div class="container-fluid mt-3" id="app">
         <h1>Issues</h1>
         <div class="header">
-            <div class="count">{{ itemsToShow.length }} Issues</div>
+            <div v-if="!loading" class="count">{{ itemsToShow.length }} Issues</div>
         </div>
         <div v-if="loading">Loading...</div> <!-- add a loading indicator here -->
         <table v-if="!loading" class="table table-bordered table-striped">
             <thead>
                 <tr>
+                    <th>
+                        Flag
+                    </th>
                     <th @click="sort('repository.name')" :class="{ active: sortColumn === 'repository.name' }">
                         Repository Name
                         <span v-if="sortColumn === 'repository.name'"
@@ -66,7 +69,12 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="item in itemsToShow">
+                <tr v-for="item in itemsToShow" :class="{ selected: item.uuid === selectedIssueUuid }">
+                    <td>
+                        <button v-if="selectedIssueUuid !== item.uuid" @click="setSelectedIssue(item.uuid)"
+                            class="regular-issue-flag"></button>
+                        <button v-else @click="setSelectedIssue(item.uuid)" class="selected-issue-flag"></button>
+                    </td>
                     <td><a :href="item.repository.links.html.href + '/issues'" target="_blank">{{
                             item.repository.name }}</a></td>
                     <td><a :href="item.links.html.href" target="_blank">{{ item.title }}</a></td>
@@ -89,9 +97,9 @@
                             enhancement</span>
                     </td>
                     <td>{{ formatDate(item.created_on) }}</td>
-                    <td><a v-if="item.assignee" @click="fetchIssues({assignee: item.assignee.uuid})" href="#">
-                            {{ item.assignee.display_name }}
-                        </a><span v-else>N/A</span>
+                    <td>
+                        <span v-if="item.assignee">{{ item.assignee.display_name }}</span>
+                        <span v-else>N/A</span>
                     </td>
                 </tr>
             </tbody>
@@ -114,6 +122,34 @@
         .filters {
             margin-left: auto;
         }
+
+        .regular-issue-flag {
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAElBMVEUAAAAUffsUfvoVffsVfvoVfvvgtL3oAAAABXRSTlMAiH+Ad0DJy9wAAABtSURBVEjH7dLBCcAgEERRISnAEtJESkgBCvbfSo4/YXD2rOzchMf3smWvjf96BC4F38fdiwUHAQEEDCAggIABBAQQMICAAgIePC0A56gWkFBAwgASClwCQEKBTQBI+JOrEWiTL1iCBAl2AUvvBVy8LcU3wZXhAAAAAElFTkSuQmCC');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 20px 20px;
+            border: none;
+            width: 20px;
+            height: 20px;
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .selected-issue-flag {
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAu0lEQVR4nO3UMQqEQBBEUQ/hHldN98waKBWYLws91UP9D5N3PdBlISIi+rvPft2ut+7n4d5vA2gxXkWPV9HjVfR4FT1eRY9X0eNV9HgVPV5Fj1clANv1de/6ubJPYBaE0p/gDAiVAFMgVAO0RxgB0BphFEBbhJEALRFGA7RDcAC0QnABtEF4j3HfYQsAAAAAAAAAAADAfYctAAAAAAAAAAAAAPcdtgAAAAAAAAAAAADcd9gCIB2AiIgm7gELJnnI1UzSCQAAAABJRU5ErkJggg==');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 20px 20px;
+            border: none;
+            width: 20px;
+            height: 20px;
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .selected {
+            background-color: #d7f4c7 !important;
+        }
     </style>
 
     <script>
@@ -125,6 +161,7 @@
                 selectedAssignee: null,
                 priorities: [],
                 selectedPriorities: [],
+                selectedIssueUuid: localStorage.getItem('selectedIssue') || null,
                 sortColumn: 'created_on',
                 reverseSort: false,
                 filter: {},
@@ -134,10 +171,6 @@
                 this.fetchIssues();
             },
             methods: {
-                clearFilters: function () {
-                    this.filter = {};
-                    this.fetchIssues();
-                },
                 fetchIssues: function (filter) {
                     this.loading = true;
 
@@ -148,27 +181,26 @@
                             const assignees = {}
 
                             this.items.forEach(item => {
-                                let priorityValue;
 
                                 switch (item.priority) {
                                     case 'trivial':
-                                        priorityValue = 1;
+                                        item.priorityValue = 1;
                                         break;
                                     case 'minor':
-                                        priorityValue = 2;
+                                        item.priorityValue = 2;
                                         break;
                                     case 'major':
-                                        priorityValue = 3;
+                                        item.priorityValue = 3;
                                         break;
                                     case 'critical':
-                                        priorityValue = 4;
+                                        item.priorityValue = 4;
                                         break;
                                     case 'blocker':
-                                        priorityValue = 5;
+                                        item.priorityValue = 5;
                                         break;
                                 }
 
-                                item.priorityValue = priorityValue;
+                                item.uuid = item.repository.name + item.id;
 
                                 if (!item.assignee) {
                                     return;
@@ -193,15 +225,13 @@
                                 name: 'N/A'
                             });
 
-                            this.itemsToShow = this.items;
-
                             const uniquePriorities = new Set();
 
                             this.items.forEach(item => {
                                 uniquePriorities.add(item.priority);
                             });
 
-                            uniquePriorities.forEach((priority) => this.priorities.push(priority));
+                            this.priorities = [...uniquePriorities];
                         })
                         .catch(error => {
                             console.log(error);
@@ -209,6 +239,15 @@
                         .finally(() => {
                             this.loading = false;
                         });
+                },
+                setSelectedIssue: function (uuid) {
+                    if (this.selectedIssueUuid === uuid) {
+                        this.selectedIssueUuid = null;
+                        localStorage.removeItem('selectedIssue');
+                        return;
+                    }
+                    this.selectedIssueUuid = uuid;
+                    localStorage.setItem('selectedIssue', uuid)
                 },
                 formatDate: function (dateStr) {
                     const date = new Date(dateStr);
@@ -231,18 +270,14 @@
                         itemsToShow = itemsToShow.filter((item) => this.selectedPriorities.includes(item.priority));
                     }
 
-
                     if (this.selectedAssignee) {
                         if (!this.selectedAssignee.uuid) {
                             itemsToShow = itemsToShow.filter((item) => !item.assignee);
-                        }
-
-                        if (this.selectedAssignee.uuid) {
+                        } else {
                             itemsToShow = itemsToShow.filter((item) => {
-                                if (item.assignee) {
-                                    return item.assignee.uuid === this.selectedAssignee.uuid;
-                                }
-                            })
+                                return item.assignee && item.assignee.uuid === this.selectedAssignee.uuid;
+
+                            });
                         }
                     }
 
@@ -268,14 +303,6 @@
                     });
 
                     return itemsToShow;
-                },
-                currentFilter: function () {
-                    const columns = Object.keys(this.filter);
-                    if (columns.length === 0) {
-                        return null;
-                    }
-
-                    return `Filtered by ` + columns.join(', ');
                 }
             }
         });
