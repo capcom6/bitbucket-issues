@@ -10,47 +10,53 @@
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
+    <script src="//cdnx.evotor.tech/lodash.min.js"></script>
     <script src="https://unpkg.com/vue-multiselect@2.1.6"></script>
     <link rel="stylesheet" href="https://unpkg.com/vue-multiselect@2.1.6/dist/vue-multiselect.min.css">
-
 </head>
 
 <body>
     <div class="container-fluid mt-3" id="app">
         <h1>Issues</h1>
         <div class="header">
-            <div class="count">{{ filteredItems.length }} Issues</div>
-            <div class="filters">
-                <button class="btn btn-primary" @click="clearFilters">{{ currentFilter || 'No filters' }}</button>
-            </div>
+            <div class="count">{{ itemsToShow.length }} Issues</div>
         </div>
         <div v-if="loading">Loading...</div> <!-- add a loading indicator here -->
         <table v-if="!loading" class="table table-bordered table-striped">
             <thead>
                 <tr>
-                    <th>Repository Name</th>
-                    <th>Title</th>
+                    <th @click="sort('repository.name')" :class="{ active: sortColumn === 'repository.name' }">
+                        Repository Name
+                        <span v-if="sortColumn === 'repository.name'"
+                            :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
+                    </th>
+                    <th @click="sort('title')" :class="{ active: sortColumn === 'title' }">
+                        Title
+                        <span v-if="sortColumn === 'title'"
+                            :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
+                    </th>
                     <th style="width: 300px;" @click="sort('priority')" :class="{ active: sortColumn === 'priority' }">
                         Priority <span v-if="sortColumn === 'priority'"
-                            :class="{ 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }"></span>
-
+                            :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
                         <div>
-                            <multiselect v-model="selectedPriorities" :options="priorities" :multiple="true"
-                                @input="filterIssues">
+                            <multiselect v-model="selectedPriorities" :options="priorities" :multiple="true">
                             </multiselect>
                         </div>
                     </th>
-                    <th @click="sort('kind')" :class="{ active: sortColumn === 'kind' }">Kind <span
-                            v-if="sortColumn === 'kind'"
-                            :class="{ 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }"></span></th>
+                    <th @click="sort('kind')" :class="{ active: sortColumn === 'kind' }">Kind
+                        <span v-if="sortColumn === 'kind'"
+                            :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
+                    </th>
                     <th @click="sort('created_on')" :class="{ active: sortColumn === 'created_on' }">Created on <span
                             v-if="sortColumn === 'created_on'"
-                            :class="{ 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }"></span>
+                            :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
                     </th>
-                    <th>Assignee User Name
+                    <th @click="sort('assignee.display_name')"
+                        :class="{ active: sortColumn === 'assignee.display_name' }">Assignee User Name
+                        <span v-if="sortColumn === 'assignee.display_name'"
+                            :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
                         <div>
-                            <select v-model="selectedAssignee" @change="filterIssues()">
+                            <select v-model="selectedAssignee">
                                 <option value="all">not chosen</option>
                                 <option v-bind:value="null">N/A</option>
                                 <option v-for="(value, key) in assignees" v-bind:value="key">
@@ -62,8 +68,7 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- sortedItems -->
-                <tr v-for="item in filteredItems">
+                <tr v-for="item in itemsToShow">
                     <td><a :href="item.repository.links.html.href + '/issues'" target="_blank">{{
                             item.repository.name }}</a></td>
                     <td><a :href="item.links.html.href" target="_blank">{{ item.title }}</a></td>
@@ -118,7 +123,6 @@
             el: '#app',
             data: {
                 items: [],
-                filteredItems: [],
                 assignees: {},
                 selectedAssignee: 'all',
                 priorities: [],
@@ -142,7 +146,6 @@
                     axios.get("/api/v1/issues", { params: this.filter })
                         .then(response => {
                             this.items = response.data;
-                            this.filteredItems = this.items;
 
                             this.items.forEach(item => {
                                 if (!item.assignee) {
@@ -155,6 +158,8 @@
 
                                 this.assignees[item.assignee.uuid] = item.assignee.display_name;
                             });
+
+                            this.itemsToShow = this.items;
 
                             const uniquePriorities = new Set();
 
@@ -171,25 +176,6 @@
                             this.loading = false;
                         });
                 },
-                filterIssues: function () {
-                    this.filteredItems = this.items;
-
-                    if (this.selectedPriorities.length) {
-                        this.filteredItems = this.filteredItems.filter((item) => this.selectedPriorities.includes(item.priority));
-                    }
-
-                    if (!this.selectedAssignee) {
-                        this.filteredItems = this.filteredItems.filter((item) => !item.assignee);
-                    }
-
-                    if (this.selectedAssignee && this.selectedAssignee !== 'all') {
-                        this.filteredItems = this.filteredItems.filter((item) => {
-                            if (item.assignee) {
-                                return item.assignee.uuid === this.selectedAssignee;
-                            }
-                        })
-                    }
-                },
                 formatDate: function (dateStr) {
                     const date = new Date(dateStr);
                     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
@@ -204,13 +190,31 @@
                 }
             },
             computed: {
-                sortedItems: function () {
+                itemsToShow: function () {
+                    let itemsToShow = this.items;
+
+                    if (this.selectedPriorities.length) {
+                        itemsToShow = itemsToShow.filter((item) => this.selectedPriorities.includes(item.priority));
+                    }
+
+                    if (!this.selectedAssignee) {
+                        itemsToShow = itemsToShow.filter((item) => !item.assignee);
+                    }
+
+                    if (this.selectedAssignee && this.selectedAssignee !== 'all') {
+                        itemsToShow = itemsToShow.filter((item) => {
+                            if (item.assignee) {
+                                return item.assignee.uuid === this.selectedAssignee;
+                            }
+                        })
+                    }
+
                     const col = this.sortColumn;
                     const order = this.reverseSort ? -1 : 1;
 
-                    return this.items.sort(function (a, b) {
-                        let va = a[col];
-                        let vb = b[col];
+                    itemsToShow.sort(function (a, b) {
+                        let va = _.get(a, col) || 'N/A';
+                        let vb = _.get(b, col) || 'N/A';
 
                         if (typeof va === 'string') {
                             va = va.toLowerCase();
@@ -225,6 +229,8 @@
                             return 0;
                         }
                     });
+
+                    return itemsToShow;
                 },
                 currentFilter: function () {
                     const columns = Object.keys(this.filter);
