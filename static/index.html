@@ -40,7 +40,8 @@
                         Priority <span v-if="sortColumn === 'priorityValue'"
                             :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
                         <div>
-                            <multiselect v-model="selectedPriorities" :options="priorities" :multiple="true">
+                            <multiselect v-model="selectedPriorities" :options="priorities" :multiple="true"
+                                placeholder="Pick some">
                             </multiselect>
                         </div>
                     </th>
@@ -52,18 +53,14 @@
                             v-if="sortColumn === 'created_on'"
                             :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
                     </th>
-                    <th @click="sort('assignee.display_name')"
+                    <th style="width: 290px;" @click="sort('assignee.display_name')"
                         :class="{ active: sortColumn === 'assignee.display_name' }">Assignee User Name
                         <span v-if="sortColumn === 'assignee.display_name'"
                             :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
                         <div>
-                            <select v-model="selectedAssignee">
-                                <option value="all">not chosen</option>
-                                <option v-bind:value="null">N/A</option>
-                                <option v-for="(value, key) in assignees" v-bind:value="key">
-                                    {{ value }}
-                                </option>
-                            </select>
+                            <multiselect v-model="selectedAssignee" track-by="uuid" label="name"
+                                placeholder="Select one" :options="assignees">
+                            </multiselect>
                         </div>
                     </th>
                 </tr>
@@ -124,8 +121,8 @@
             el: '#app',
             data: {
                 items: [],
-                assignees: {},
-                selectedAssignee: 'all',
+                assignees: [],
+                selectedAssignee: null,
                 priorities: [],
                 selectedPriorities: [],
                 sortColumn: 'created_on',
@@ -147,6 +144,8 @@
                     axios.get("/api/v1/issues", { params: this.filter })
                         .then(response => {
                             this.items = response.data;
+
+                            const assignees = {}
 
                             this.items.forEach(item => {
                                 let priorityValue;
@@ -175,11 +174,23 @@
                                     return;
                                 }
 
-                                if (item.assignee.uuid in this.assignees) {
+                                if (item.assignee.uuid in assignees) {
                                     return;
                                 }
 
-                                this.assignees[item.assignee.uuid] = item.assignee.display_name;
+                                assignees[item.assignee.uuid] = item.assignee.display_name;
+                            });
+
+                            for (key in assignees) {
+                                this.assignees.push({
+                                    uuid: key,
+                                    name: assignees[key]
+                                })
+                            }
+
+                            this.assignees.push({
+                                uuid: null,
+                                name: 'N/A'
                             });
 
                             this.itemsToShow = this.items;
@@ -220,16 +231,19 @@
                         itemsToShow = itemsToShow.filter((item) => this.selectedPriorities.includes(item.priority));
                     }
 
-                    if (!this.selectedAssignee) {
-                        itemsToShow = itemsToShow.filter((item) => !item.assignee);
-                    }
 
-                    if (this.selectedAssignee && this.selectedAssignee !== 'all') {
-                        itemsToShow = itemsToShow.filter((item) => {
-                            if (item.assignee) {
-                                return item.assignee.uuid === this.selectedAssignee;
-                            }
-                        })
+                    if (this.selectedAssignee) {
+                        if (!this.selectedAssignee.uuid) {
+                            itemsToShow = itemsToShow.filter((item) => !item.assignee);
+                        }
+
+                        if (this.selectedAssignee.uuid) {
+                            itemsToShow = itemsToShow.filter((item) => {
+                                if (item.assignee) {
+                                    return item.assignee.uuid === this.selectedAssignee.uuid;
+                                }
+                            })
+                        }
                     }
 
                     const col = this.sortColumn;
