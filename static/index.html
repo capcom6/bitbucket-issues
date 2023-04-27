@@ -10,9 +10,8 @@
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="//cdnx.evotor.tech/lodash.min.js"></script>
-    <script src="https://unpkg.com/vue-multiselect@2.1.6"></script>
-    <link rel="stylesheet" href="https://unpkg.com/vue-multiselect@2.1.6/dist/vue-multiselect.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue-multiselect@2.1.7/dist/vue-multiselect.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/vue-multiselect@2.1.7/dist/vue-multiselect.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -28,52 +27,62 @@
                     <th>
                         Flag
                     </th>
-                    <th @click="sort('repository.name')" :class="{ active: sortColumn === 'repository.name' }">
+                    <th @click="sort('repository.name')" :class="{ active: sorting.sortColumn === 'repository.name' }">
                         Repository Name
-                        <span v-if="sortColumn === 'repository.name'"
-                            :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
+                        <sorting v-if="sorting.sortColumn === 'repository.name'"
+                            v-bind:reverse-sort="sorting.reverseSort">
+                        </sorting>
                     </th>
-                    <th @click="sort('title')" :class="{ active: sortColumn === 'title' }">
+                    <th @click="sort('title')" :class="{ active: sorting.sortColumn === 'title' }">
                         Title
-                        <span v-if="sortColumn === 'title'"
-                            :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
+                        <sorting v-if="sorting.sortColumn === 'title'" v-bind:reverse-sort="sorting.reverseSort">
+                        </sorting>
                     </th>
                     <th style="width: 300px;" @click="sort('priorityValue')"
-                        :class="{ active: sortColumn === 'priorityValue' }">
-                        Priority <span v-if="sortColumn === 'priorityValue'"
-                            :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
+                        :class="{ active: sorting.sortColumn === 'priorityValue' }">
+                        Priority
+                        <sorting v-if="sorting.sortColumn === 'priorityValue'"
+                            v-bind:reverse-sort="sorting.reverseSort">
+                        </sorting>
                         <div>
-                            <multiselect v-model="selectedPriorities" :options="priorities" :multiple="true"
+                            <multiselect v-model="filter.selectedPriorities" :options="data.priorities" :multiple="true"
                                 placeholder="Pick some">
                             </multiselect>
                         </div>
                     </th>
-                    <th @click="sort('kind')" :class="{ active: sortColumn === 'kind' }">Kind
-                        <span v-if="sortColumn === 'kind'"
-                            :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
+                    <th @click="sort('kind')" :class="{ active: sorting.sortColumn === 'kind' }">Kind
+                        <sorting v-if="sorting.sortColumn === 'kind'" v-bind:reverse-sort="sorting.reverseSort">
+                        </sorting>
                     </th>
-                    <th @click="sort('created_on')" :class="{ active: sortColumn === 'created_on' }">Created on <span
-                            v-if="sortColumn === 'created_on'"
-                            :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
+                    <th @click="sort('created_on')" :class="{ active: sorting.sortColumn === 'created_on' }">Created on
+                        <sorting v-if="sorting.sortColumn === 'created_on'" v-bind:reverse-sort="sorting.reverseSort">
+                        </sorting>
                     </th>
+
+
+
                     <th style="width: 290px;" @click="sort('assignee.display_name')"
-                        :class="{ active: sortColumn === 'assignee.display_name' }">Assignee User Name
-                        <span v-if="sortColumn === 'assignee.display_name'"
-                            :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>
+                        :class="{ active: sorting.sortColumn === 'assignee.display_name' }">Assignee User Name
+                        <sorting v-if="sorting.sortColumn === 'assignee.display_name'"
+                            v-bind:reverse-sort="sorting.reverseSort">
+                        </sorting>
                         <div>
-                            <multiselect v-model="selectedAssignee" track-by="uuid" label="name"
-                                placeholder="Select one" :options="assignees">
+                            <multiselect v-model="filter.selectedAssignee" track-by="uuid" label="name"
+                                placeholder="Select one" :options="data.assignees">
                             </multiselect>
                         </div>
                     </th>
+
+
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="item in itemsToShow" :class="{ selected: item.uuid === selectedIssueUuid }">
+                <tr v-for="item in itemsToShow" :class="{ 'table-success': item.uuid === selectedIssueUuid }"
+                    :ref="item.uuid" :id="item.uuid">
                     <td>
-                        <button v-if="selectedIssueUuid !== item.uuid" @click="setSelectedIssue(item.uuid)"
-                            class="regular-issue-flag"></button>
-                        <button v-else @click="setSelectedIssue(item.uuid)" class="selected-issue-flag"></button>
+                        <button
+                            :class="{ 'regular-issue-flag': selectedIssueUuid !== item.uuid, 'selected-issue-flag': selectedIssueUuid === item.uuid }"
+                            @click="setSelectedIssue(item.uuid)" class="regular-issue-flag"></button>
                     </td>
                     <td><a :href="item.repository.links.html.href + '/issues'" target="_blank">{{
                             item.repository.name }}</a></td>
@@ -97,9 +106,12 @@
                             enhancement</span>
                     </td>
                     <td>{{ formatDate(item.created_on) }}</td>
-                    <td>
-                        <span v-if="item.assignee">{{ item.assignee.display_name }}</span>
-                        <span v-else>N/A</span>
+                    <td style="cursor: pointer;">
+                        <span v-if="item.assignee"
+                            @click="onAssigneeClick({uuid: item.assignee.uuid, name: item.assignee.display_name})">{{
+                            item.assignee.display_name
+                            }}</span>
+                        <span v-else @click="onAssigneeClick({uuid: null, name: 'N/A'})">N/A</span>
                     </td>
                 </tr>
             </tbody>
@@ -135,6 +147,10 @@
             padding: 0;
         }
 
+        .regular-issue-flag:focus {
+            outline: none;
+        }
+
         .selected-issue-flag {
             background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAu0lEQVR4nO3UMQqEQBBEUQ/hHldN98waKBWYLws91UP9D5N3PdBlISIi+rvPft2ut+7n4d5vA2gxXkWPV9HjVfR4FT1eRY9X0eNV9HgVPV5Fj1clANv1de/6ubJPYBaE0p/gDAiVAFMgVAO0RxgB0BphFEBbhJEALRFGA7RDcAC0QnABtEF4j3HfYQsAAAAAAAAAAADAfYctAAAAAAAAAAAAAPcdtgAAAAAAAAAAAADcd9gCIB2AiIgm7gELJnnI1UzSCQAAAABJRU5ErkJggg==');
             background-position: center;
@@ -147,8 +163,8 @@
             padding: 0;
         }
 
-        .selected {
-            background-color: #d7f4c7 !important;
+        .selected-issue-flag:focus {
+            outline: none;
         }
     </style>
 
@@ -156,49 +172,65 @@
         const app = new Vue({
             el: '#app',
             data: {
-                items: [],
-                assignees: [],
-                selectedAssignee: null,
-                priorities: [],
-                selectedPriorities: [],
+                data: {
+                    items: [],
+                    assignees: [],
+                    priorities: [],
+                },
+                filter: {
+                    selectedAssignee: null,
+                    selectedPriorities: [],
+                },
+                sorting: {
+                    sortColumn: 'created_on',
+                    reverseSort: false,
+                },
                 selectedIssueUuid: localStorage.getItem('selectedIssue') || null,
-                sortColumn: 'created_on',
-                reverseSort: false,
-                filter: {},
                 loading: false,
             },
             created: function () {
                 this.fetchIssues();
             },
+            watch: {
+                loading(newVal, oldVal) {
+                    if (oldVal && !newVal) {
+                        this.$nextTick(() => {
+                            this.scrollToElement();
+                        });
+                    }
+                }
+            },
             methods: {
+                scrollToElement: function () {
+                    let element = null;
+
+                    if (this.selectedIssueUuid) {
+                        element = this.$refs[this.selectedIssueUuid];
+                    }
+
+                    if (element) {
+                        element[0].scrollIntoView({ behavior: 'smooth' });
+                    }
+                },
                 fetchIssues: function (filter) {
                     this.loading = true;
 
+                    const PRIORITIES = {
+                        trivial: 1,
+                        minor: 2,
+                        major: 3,
+                        critical: 4,
+                        blocker: 5
+                    }
+
                     axios.get("/api/v1/issues", { params: this.filter })
                         .then(response => {
-                            this.items = response.data;
+                            this.data.items = response.data;
 
                             const assignees = {}
 
-                            this.items.forEach(item => {
-
-                                switch (item.priority) {
-                                    case 'trivial':
-                                        item.priorityValue = 1;
-                                        break;
-                                    case 'minor':
-                                        item.priorityValue = 2;
-                                        break;
-                                    case 'major':
-                                        item.priorityValue = 3;
-                                        break;
-                                    case 'critical':
-                                        item.priorityValue = 4;
-                                        break;
-                                    case 'blocker':
-                                        item.priorityValue = 5;
-                                        break;
-                                }
+                            this.data.items.forEach(item => {
+                                item.priorityValue = PRIORITIES[item.priority];
 
                                 item.uuid = item.repository.name + item.id;
 
@@ -214,24 +246,24 @@
                             });
 
                             for (key in assignees) {
-                                this.assignees.push({
+                                this.data.assignees.push({
                                     uuid: key,
                                     name: assignees[key]
                                 })
                             }
 
-                            this.assignees.push({
+                            this.data.assignees.push({
                                 uuid: null,
                                 name: 'N/A'
                             });
 
                             const uniquePriorities = new Set();
 
-                            this.items.forEach(item => {
+                            this.data.items.forEach(item => {
                                 uniquePriorities.add(item.priority);
                             });
 
-                            this.priorities = [...uniquePriorities];
+                            this.data.priorities = [...uniquePriorities];
                         })
                         .catch(error => {
                             console.log(error);
@@ -254,39 +286,58 @@
                     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
                 },
                 sort: function (column) {
-                    if (column === this.sortColumn) {
-                        this.reverseSort = !this.reverseSort;
+                    if (column === this.sorting.sortColumn) {
+                        this.sorting.reverseSort = !this.sorting.reverseSort;
                     } else {
-                        this.sortColumn = column;
-                        this.reverseSort = false;
+                        this.sorting.sortColumn = column;
+                        this.sorting.reverseSort = false;
                     }
+                },
+                onAssigneeClick: function (assignee) {
+                    this.filter.selectedAssignee = assignee;
                 }
             },
             computed: {
                 itemsToShow: function () {
-                    let itemsToShow = this.items;
+                    let itemsToShow = this.data.items;
 
-                    if (this.selectedPriorities.length) {
-                        itemsToShow = itemsToShow.filter((item) => this.selectedPriorities.includes(item.priority));
+                    if (this.filter.selectedPriorities.length) {
+                        itemsToShow = itemsToShow.filter((item) => this.filter.selectedPriorities.includes(item.priority));
                     }
 
-                    if (this.selectedAssignee) {
-                        if (!this.selectedAssignee.uuid) {
+                    if (this.filter.selectedAssignee) {
+                        if (!this.filter.selectedAssignee.uuid) {
                             itemsToShow = itemsToShow.filter((item) => !item.assignee);
                         } else {
                             itemsToShow = itemsToShow.filter((item) => {
-                                return item.assignee && item.assignee.uuid === this.selectedAssignee.uuid;
+                                return item.assignee && item.assignee.uuid === this.filter.selectedAssignee.uuid;
 
                             });
                         }
                     }
 
-                    const col = this.sortColumn;
-                    const order = this.reverseSort ? -1 : 1;
+                    const col = this.sorting.sortColumn;
+
+                    const order = this.sorting.reverseSort ? -1 : 1;
+
+                    const getValue = function (object, path) {
+                        const fields = path.split('.');
+
+                        let result = object;
+
+                        fields.forEach((field) => {
+                            if (!result) {
+                                return;
+                            }
+                            result = result[field];
+                        })
+
+                        return result;
+                    };
 
                     itemsToShow.sort(function (a, b) {
-                        let va = _.get(a, col) || 'N/A';
-                        let vb = _.get(b, col) || 'N/A';
+                        let va = getValue(a, col) || 'N/A';
+                        let vb = getValue(b, col) || 'N/A';
 
                         if (typeof va === 'string') {
                             va = va.toLowerCase();
@@ -306,7 +357,16 @@
                 }
             }
         });
-        Vue.component('multiselect', window.VueMultiselect.default)
+        Vue.component('multiselect', window.VueMultiselect.default);
+        Vue.component('sorting', {
+            props: {
+                reverseSort: {
+                    type: Boolean
+                }
+            },
+            template: `<span :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>`,
+
+        })
     </script>
 </body>
 
