@@ -4,12 +4,12 @@
 <head>
     <title>Issues</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css"
         integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue-multiselect@2.1.7/dist/vue-multiselect.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/vue-multiselect@2.1.7/dist/vue-multiselect.min.css" rel="stylesheet">
 </head>
@@ -27,53 +27,53 @@
                     <th>
                         Flag
                     </th>
-                    <th @click="sort('repository.name')" :class="{ active: sorting.sortColumn === 'repository.name' }">
-                        Repository Name
-                        <sorting v-if="sorting.sortColumn === 'repository.name'"
-                            v-bind:reverse-sort="sorting.reverseSort">
-                        </sorting>
+                    <th>
+                        <sorter column="repository.name" v-bind:current="sorting.sortColumn"
+                            v-bind:reverse="sorting.reverseSort" @sort-by="sort">
+                            Repository Name
+                        </sorter>
                     </th>
-                    <th @click="sort('title')" :class="{ active: sorting.sortColumn === 'title' }">
-                        Title
-                        <sorting v-if="sorting.sortColumn === 'title'" v-bind:reverse-sort="sorting.reverseSort">
-                        </sorting>
+                    <th>
+                        <sorter column="title" v-bind:current="sorting.sortColumn" v-bind:reverse="sorting.reverseSort"
+                            @sort-by="sort">
+                            Title
+                        </sorter>
                     </th>
-                    <th style="width: 300px;" @click="sort('priorityValue')"
-                        :class="{ active: sorting.sortColumn === 'priorityValue' }">
-                        Priority
-                        <sorting v-if="sorting.sortColumn === 'priorityValue'"
-                            v-bind:reverse-sort="sorting.reverseSort">
-                        </sorting>
+                    <th style="width: 300px;">
+                        <sorter column="priorityValue" v-bind:current="sorting.sortColumn"
+                            v-bind:reverse="sorting.reverseSort" @sort-by="sort">
+                            Priority
+                        </sorter>
                         <div>
                             <multiselect v-model="filter.selectedPriorities" :options="data.priorities" :multiple="true"
                                 placeholder="Pick some">
                             </multiselect>
                         </div>
                     </th>
-                    <th @click="sort('kind')" :class="{ active: sorting.sortColumn === 'kind' }">Kind
-                        <sorting v-if="sorting.sortColumn === 'kind'" v-bind:reverse-sort="sorting.reverseSort">
-                        </sorting>
+                    <th>
+                        <sorter column="kind" v-bind:current="sorting.sortColumn" v-bind:reverse="sorting.reverseSort"
+                            @sort-by="sort">
+                            Kind
+                        </sorter>
                     </th>
-                    <th @click="sort('created_on')" :class="{ active: sorting.sortColumn === 'created_on' }">Created on
-                        <sorting v-if="sorting.sortColumn === 'created_on'" v-bind:reverse-sort="sorting.reverseSort">
-                        </sorting>
+                    <th>
+                        <sorter column="created_on" v-bind:current="sorting.sortColumn"
+                            v-bind:reverse="sorting.reverseSort" @sort-by="sort">
+                            Created on
+                        </sorter>
                     </th>
 
-
-
-                    <th style="width: 290px;" @click="sort('assignee.display_name')"
-                        :class="{ active: sorting.sortColumn === 'assignee.display_name' }">Assignee User Name
-                        <sorting v-if="sorting.sortColumn === 'assignee.display_name'"
-                            v-bind:reverse-sort="sorting.reverseSort">
-                        </sorting>
+                    <th style="width: 290px;">
+                        <sorter column="assignee.display_name" v-bind:current="sorting.sortColumn"
+                            v-bind:reverse="sorting.reverseSort" @sort-by="sort">
+                            Assignee User Name
+                        </sorter>
                         <div>
                             <multiselect v-model="filter.selectedAssignee" track-by="uuid" label="name"
                                 placeholder="Select one" :options="data.assignees">
                             </multiselect>
                         </div>
                     </th>
-
-
                 </tr>
             </thead>
             <tbody>
@@ -107,10 +107,10 @@
                     </td>
                     <td>{{ formatDate(item.created_on) }}</td>
                     <td style="cursor: pointer;">
-                        <span v-if="item.assignee"
-                            @click="onAssigneeClick({uuid: item.assignee.uuid, name: item.assignee.display_name})">{{
-                            item.assignee.display_name
-                            }}</span>
+                        <a href="#" v-if="item.assignee"
+                            @click="onAssigneeClick({uuid: item.assignee.uuid, name: item.assignee.display_name})">
+                            {{item.assignee.display_name}}
+                        </a>
                         <span v-else @click="onAssigneeClick({uuid: null, name: 'N/A'})">N/A</span>
                     </td>
                 </tr>
@@ -358,15 +358,21 @@
             }
         });
         Vue.component('multiselect', window.VueMultiselect.default);
-        Vue.component('sorting', {
+        Vue.component('sorter', {
             props: {
-                reverseSort: {
-                    type: Boolean
-                }
+                column: String,
+                current: String,
+                reverse: Boolean
             },
-            template: `<span :class="['fa-solid', { 'fa-chevron-up': reverseSort, 'fa-chevron-down': !reverseSort }]"></span>`,
+            emits: ['sort-by'], // по неизвестной причине имена событий не конвертируются из camelCase в kebab-case
+            template: `
+            <span @click="$emit('sort-by', column)">
+                <slot></slot>
+                <span v-if="column === current" :class="['fa-solid', { 'fa-chevron-up': reverse, 'fa-chevron-down': !reverse }]"></span>
+            </span>
+            `,
 
-        })
+        });
     </script>
 </body>
 
