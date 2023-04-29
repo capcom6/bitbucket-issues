@@ -24,22 +24,22 @@
         <table v-if="!loading" class="table table-bordered table-striped">
             <thead>
                 <tr>
-                    <th>
+                    <th class="col-1">
                         Flag
                     </th>
-                    <th>
+                    <th class="col-2">
                         <sorter column="repository.name" v-bind:current="sorting.sortColumn"
                             v-bind:reverse="sorting.reverseSort" @sort-by="sort">
                             Repository Name
                         </sorter>
                     </th>
-                    <th>
+                    <th class="col-2">
                         <sorter column="title" v-bind:current="sorting.sortColumn" v-bind:reverse="sorting.reverseSort"
                             @sort-by="sort">
                             Title
                         </sorter>
                     </th>
-                    <th style="width: 300px;">
+                    <th class="col-2">
                         <sorter column="priorityValue" v-bind:current="sorting.sortColumn"
                             v-bind:reverse="sorting.reverseSort" @sort-by="sort">
                             Priority
@@ -51,20 +51,20 @@
                             </multiselect>
                         </div>
                     </th>
-                    <th>
+                    <th class="col-1">
                         <sorter column="kind" v-bind:current="sorting.sortColumn" v-bind:reverse="sorting.reverseSort"
                             @sort-by="sort">
                             Kind
                         </sorter>
                     </th>
-                    <th>
+                    <th class="col-1 text-right">
                         <sorter column="created_on" v-bind:current="sorting.sortColumn"
                             v-bind:reverse="sorting.reverseSort" @sort-by="sort">
                             Created on
                         </sorter>
                     </th>
 
-                    <th style="width: 290px;">
+                    <th class="col-2">
                         <sorter column="assignee.display_name" v-bind:current="sorting.sortColumn"
                             v-bind:reverse="sorting.reverseSort" @sort-by="sort">
                             Assignee User Name
@@ -106,8 +106,8 @@
                         <span v-if="item.kind == 'enhancement'"><i class="fas fa-lightbulb text-success"></i>
                             enhancement</span>
                     </td>
-                    <td>{{ formatDate(item.created_on) }}</td>
-                    <td style="cursor: pointer;">
+                    <td class="text-right">{{ formatDate(item.created_on) }}</td>
+                    <td>
                         <a href="#" v-if="item.assignee"
                             @click="onAssigneeClick({uuid: item.assignee.uuid, name: item.assignee.display_name})">
                             {{item.assignee.display_name}}
@@ -275,7 +275,7 @@
                 },
                 formatDate: function (dateStr) {
                     const date = new Date(dateStr);
-                    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                    return date.toLocaleDateString();
                 },
                 sort: function (column) {
                     if (column === this.sorting.sortColumn) {
@@ -356,7 +356,7 @@
                 current: String,
                 reverse: Boolean
             },
-            emits: ['sort-by'], // по неизвестной причине имена событий не конвертируются из camelCase в kebab-case
+            emits: ['sort-by'],
             template: `
             <span @click="$emit('sort-by', column)">
                 <slot></slot>
