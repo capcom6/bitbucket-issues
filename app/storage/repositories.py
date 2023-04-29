@@ -82,25 +82,27 @@ class RedisIssuesRepository(IssuesRepository):
         priority: typing.Union[str, None] = None,
         assignee: typing.Union[str, None] = None,
     ) -> typing.List[dict]:
-        issues = []
+        issues: typing.List[str] = []
         if priority is None and assignee is None:
             issues = self._con.hvals(self.KEY_ISSUES)
         elif priority is not None and assignee is not None:
             keys = self._con.sinter(
                 f"{self.KEY_PRIORITY}{priority}", f"{self.KEY_ASSIGNEE}{assignee}"
             )
-            issues = self._con.hmget(self.KEY_ISSUES, keys)
+            issues = self._con.hmget(self.KEY_ISSUES, keys)  # type: ignore
         elif priority is not None:
             keys = self._con.smembers(f"{self.KEY_PRIORITY}{priority}")
-            issues = self._con.hmget(self.KEY_ISSUES, keys)
+            issues = self._con.hmget(self.KEY_ISSUES, keys)  # type: ignore
         elif assignee is not None:
             keys = self._con.smembers(f"{self.KEY_ASSIGNEE}{assignee}")
-            issues = self._con.hmget(self.KEY_ISSUES, keys)
+            issues = self._con.hmget(self.KEY_ISSUES, keys)  # type: ignore
 
         return [json.loads(v) for v in issues]
 
     def replace(self, issues: typing.List[dict]):
-        self._con.delete(*self._con.keys(f"{self.KEY_ISSUES}*"))
+        keys = self._con.keys(f"{self.KEY_ISSUES}*")
+        if keys:
+            self._con.delete(*keys)
 
         for i in issues:
             key = self._md5(i["links"]["self"]["href"])
