@@ -1,12 +1,12 @@
 import typing
+
 import fastapi
+
 from app import storage
 from app.api.domain import Issue
 from app.core.config import settings
-
 from app.services.bitbucket import BitBucketService
 from app.services.issues import IssuesService, Priority
-
 
 router = fastapi.APIRouter()
 
@@ -29,7 +29,9 @@ issues_svc = IssuesService(bitbucket_svc, issues)
     description="Returns issues with filter",
 )
 async def issues_get(
+    background: fastapi.BackgroundTasks,
     priority: typing.Union[Priority, None] = None,
     assignee: typing.Union[str, None] = None,
 ):
+    background.add_task(issues_svc.sync)
     return await issues_svc.select(priority=priority, assignee=assignee)

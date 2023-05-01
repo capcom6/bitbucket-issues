@@ -1,10 +1,9 @@
-import datetime
+import asyncio
 import threading
 import typing
 from enum import Enum
 
 from app.core import logger
-from app.core.decorators import run_in_background
 from app.storage.repositories import IssuesRepository
 
 from .bitbucket import BitBucketService
@@ -36,9 +35,8 @@ class IssuesService:
             or '(state = "new" OR state = "open" OR state = "on hold") AND (priority = "major" OR priority = "critical" OR priority = "blocker")'
         )
 
-        self._sync_lock = threading.Lock()
+        self._sync_lock = asyncio.Lock()
         self._issues = []
-        self._issues_time = 0
 
     async def select(
         self,
@@ -46,39 +44,57 @@ class IssuesService:
         priority: typing.Union[Priority, None] = None,
         assignee: typing.Union[str, None] = None,
     ) -> typing.List[dict]:
-        if not self._repo.exists():
-            self._sync()
-
-        issues = self._repo.select(
+        issues = await self._repo.select(
             priority=priority.value if priority else None, assignee=assignee
         )
 
         return sorted(issues, key=lambda i: i["created_on"])
 
-    @run_in_background
-    def _sync(self):
+    async def sync(self, *args, **kwargs):
+        if await self._repo.exists():
+            return
+
+        return await self._sync()
+
+    async def _sync(self):
         if self._sync_lock.locked():
             return
 
         logger.info(f"Sync on {threading.current_thread().name} started")
-        with self._sync_lock:
-            issues = [
-                issue
-                for repo in self._client.select_repositories(
-                    params={
-                        "q": "has_issues = True"
-                        if len(self._repos_filter) == 0
-                        else f"(has_issues = True) AND {self._repos_filter}"
-                    }
+        async with self._sync_lock, self._client:
+
+            async def gen_to_list(
+                gen: typing.AsyncGenerator[typing.Dict[str, typing.Any], None]
+            ) -> typing.List[typing.Dict[str, typing.Any]]:
+                data = []
+                async for item in gen:
+                    data.append(item)
+                return data
+
+            repos = await self._client.select_repositories(
+                params={
+                    "q": "has_issues = True"
+                    if len(self._repos_filter) == 0
+                    else f"(has_issues = True) AND {self._repos_filter}"
+                }
+            )
+
+            repo_tasks = [
+                asyncio.create_task(
+                    gen_to_list(
+                        await self._client.select_issues(
+                            repo["uuid"],
+                            params={"q": self._issues_filter},
+                        )
+                    )
                 )
-                for issue in self._client.select_issues(
-                    repo["uuid"],
-                    params={"q": self._issues_filter},
-                )
+                async for repo in repos
             ]
-            # так делать нельзя, потому что соединени с Redis уже привязано к основному циклу событий
-            self._repo.replace(issues)
+
+            results = await asyncio.gather(*repo_tasks)
+            issues = [issue for group in results for issue in group]
+
+            await self._repo.replace(issues)
             self._issues = issues
-            self._issues_time = datetime.datetime.now().timestamp()
 
         logger.info(f"Sync on {threading.current_thread().name} finished")
