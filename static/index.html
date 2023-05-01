@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css"
         integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue-multiselect@2.1.7/dist/vue-multiselect.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/vue-multiselect@2.1.7/dist/vue-multiselect.min.css" rel="stylesheet">
@@ -20,50 +20,51 @@
         <div class="header">
             <div v-if="!loading" class="count">{{ itemsToShow.length }} Issues</div>
         </div>
-        <div v-if="loading">Loading...</div> <!-- add a loading indicator here -->
+        <div v-if="loading">Loading...</div>
         <table v-if="!loading" class="table table-bordered table-striped">
             <thead>
                 <tr>
-                    <th>
+                    <th class="col-1">
                         Flag
                     </th>
-                    <th>
+                    <th class="col-2">
                         <sorter column="repository.name" v-bind:current="sorting.sortColumn"
                             v-bind:reverse="sorting.reverseSort" @sort-by="sort">
                             Repository Name
                         </sorter>
                     </th>
-                    <th>
+                    <th class="col-2">
                         <sorter column="title" v-bind:current="sorting.sortColumn" v-bind:reverse="sorting.reverseSort"
                             @sort-by="sort">
                             Title
                         </sorter>
                     </th>
-                    <th style="width: 300px;">
+                    <th class="col-2">
                         <sorter column="priorityValue" v-bind:current="sorting.sortColumn"
                             v-bind:reverse="sorting.reverseSort" @sort-by="sort">
                             Priority
                         </sorter>
                         <div>
                             <multiselect v-model="filter.selectedPriorities" :options="data.priorities" :multiple="true"
+                                :hide-selected="true" :close-on-select="false" :show-pointer="false"
                                 placeholder="Pick some">
                             </multiselect>
                         </div>
                     </th>
-                    <th>
+                    <th class="col-1">
                         <sorter column="kind" v-bind:current="sorting.sortColumn" v-bind:reverse="sorting.reverseSort"
                             @sort-by="sort">
                             Kind
                         </sorter>
                     </th>
-                    <th>
+                    <th class="col-1 text-right">
                         <sorter column="created_on" v-bind:current="sorting.sortColumn"
                             v-bind:reverse="sorting.reverseSort" @sort-by="sort">
                             Created on
                         </sorter>
                     </th>
 
-                    <th style="width: 290px;">
+                    <th class="col-2">
                         <sorter column="assignee.display_name" v-bind:current="sorting.sortColumn"
                             v-bind:reverse="sorting.reverseSort" @sort-by="sort">
                             Assignee User Name
@@ -105,8 +106,8 @@
                         <span v-if="item.kind == 'enhancement'"><i class="fas fa-lightbulb text-success"></i>
                             enhancement</span>
                     </td>
-                    <td>{{ formatDate(item.created_on) }}</td>
-                    <td style="cursor: pointer;">
+                    <td class="text-right">{{ formatDate(item.created_on) }}</td>
+                    <td>
                         <a href="#" v-if="item.assignee"
                             @click="onAssigneeClick({uuid: item.assignee.uuid, name: item.assignee.display_name})">
                             {{item.assignee.display_name}}
@@ -169,13 +170,20 @@
     </style>
 
     <script>
+        const PRIORITIES = {
+            trivial: 1,
+            minor: 2,
+            major: 3,
+            critical: 4,
+            blocker: 5
+        };
         const app = new Vue({
             el: '#app',
             data: {
                 data: {
                     items: [],
                     assignees: [],
-                    priorities: [],
+                    priorities: Object.keys(PRIORITIES),
                 },
                 filter: {
                     selectedAssignee: null,
@@ -215,14 +223,6 @@
                 fetchIssues: function (filter) {
                     this.loading = true;
 
-                    const PRIORITIES = {
-                        trivial: 1,
-                        minor: 2,
-                        major: 3,
-                        critical: 4,
-                        blocker: 5
-                    }
-
                     axios.get("/api/v1/issues", { params: this.filter })
                         .then(response => {
                             this.data.items = response.data;
@@ -256,14 +256,6 @@
                                 uuid: null,
                                 name: 'N/A'
                             });
-
-                            const uniquePriorities = new Set();
-
-                            this.data.items.forEach(item => {
-                                uniquePriorities.add(item.priority);
-                            });
-
-                            this.data.priorities = [...uniquePriorities];
                         })
                         .catch(error => {
                             console.log(error);
@@ -283,7 +275,7 @@
                 },
                 formatDate: function (dateStr) {
                     const date = new Date(dateStr);
-                    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                    return date.toLocaleDateString();
                 },
                 sort: function (column) {
                     if (column === this.sorting.sortColumn) {
@@ -364,7 +356,7 @@
                 current: String,
                 reverse: Boolean
             },
-            emits: ['sort-by'], // по неизвестной причине имена событий не конвертируются из camelCase в kebab-case
+            emits: ['sort-by'],
             template: `
             <span @click="$emit('sort-by', column)">
                 <slot></slot>
