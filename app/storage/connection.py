@@ -1,6 +1,6 @@
 import datetime
 from urllib.parse import urlparse
-from redis import Redis
+from redis.asyncio import Redis
 
 from .repositories import (
     IssuesRepository,

@@ -3,7 +3,7 @@ import datetime
 import hashlib
 import json
 import typing
-from redis import Redis
+from redis.asyncio import Redis
 
 
 class IssuesRepository(abc.ABC):
@@ -13,10 +13,10 @@ class IssuesRepository(abc.ABC):
         super().__init__()
         self.ttl = ttl
 
-    def exists(self) -> bool:
+    async def exists(self) -> bool:
         raise NotImplemented
 
-    def select(
+    async def select(
         self,
         *,
         priority: typing.Union[str, None] = None,
@@ -24,7 +24,7 @@ class IssuesRepository(abc.ABC):
     ) -> typing.List[dict]:
         raise NotImplemented
 
-    def replace(self, issues: typing.List[dict]):
+    async def replace(self, issues: typing.List[dict]):
         raise NotImplemented
 
 
@@ -34,12 +34,12 @@ class MemoryIssuesRepository(IssuesRepository):
         self._issues = []
         self._issues_time = 0
 
-    def exists(self) -> bool:
+    async def exists(self) -> bool:
         return (
             self._issues_time + self.ttl.seconds > datetime.datetime.now().timestamp()
         )
 
-    def select(
+    async def select(
         self,
         *,
         priority: typing.Union[str, None] = None,
@@ -53,7 +53,7 @@ class MemoryIssuesRepository(IssuesRepository):
 
         return list(filter(filter_fn, self._issues))
 
-    def replace(self, issues: typing.List[dict]):
+    async def replace(self, issues: typing.List[dict]):
         self._issues = issues
         self._issues_time = datetime.datetime.now().timestamp()
 
@@ -73,46 +73,51 @@ class RedisIssuesRepository(IssuesRepository):
         super().__init__(ttl=ttl)
         self._con = connection
 
-    def exists(self) -> bool:
-        return self._con.get(self.KEY_ISSUES_ACTUAL) is not None
+    async def exists(self) -> bool:
+        return await self._con.get(self.KEY_ISSUES_ACTUAL) is not None
 
-    def select(
+    async def select(
         self,
         *,
         priority: typing.Union[str, None] = None,
         assignee: typing.Union[str, None] = None,
     ) -> typing.List[dict]:
         issues: typing.List[str] = []
-        if priority is None and assignee is None:
-            issues = self._con.hvals(self.KEY_ISSUES)
-        elif priority is not None and assignee is not None:
-            keys = self._con.sinter(
-                f"{self.KEY_PRIORITY}{priority}", f"{self.KEY_ASSIGNEE}{assignee}"
-            )
-            issues = self._con.hmget(self.KEY_ISSUES, keys)  # type: ignore
-        elif priority is not None:
-            keys = self._con.smembers(f"{self.KEY_PRIORITY}{priority}")
-            issues = self._con.hmget(self.KEY_ISSUES, keys)  # type: ignore
-        elif assignee is not None:
-            keys = self._con.smembers(f"{self.KEY_ASSIGNEE}{assignee}")
-            issues = self._con.hmget(self.KEY_ISSUES, keys)  # type: ignore
+
+        async with self._con.pipeline():
+            if priority is None and assignee is None:
+                issues = await self._con.hvals(self.KEY_ISSUES)
+            elif priority is not None and assignee is not None:
+                keys = await self._con.sinter(
+                    f"{self.KEY_PRIORITY}{priority}", f"{self.KEY_ASSIGNEE}{assignee}"
+                )
+                issues = await self._con.hmget(self.KEY_ISSUES, keys)  # type: ignore
+            elif priority is not None:
+                keys = await self._con.smembers(f"{self.KEY_PRIORITY}{priority}")
+                issues = await self._con.hmget(self.KEY_ISSUES, keys)  # type: ignore
+            elif assignee is not None:
+                keys = await self._con.smembers(f"{self.KEY_ASSIGNEE}{assignee}")
+                issues = await self._con.hmget(self.KEY_ISSUES, keys)  # type: ignore
 
         return [json.loads(v) for v in issues]
 
-    def replace(self, issues: typing.List[dict]):
-        keys = self._con.keys(f"{self.KEY_ISSUES}*")
-        if keys:
-            self._con.delete(*keys)
+    async def replace(self, issues: typing.List[dict]):
+        async with self._con.pipeline():
+            keys = await self._con.keys(f"{self.KEY_ISSUES}*")
+            if keys:
+                await self._con.delete(*keys)
 
-        for i in issues:
-            key = self._md5(i["links"]["self"]["href"])
-            self._con.hset(self.KEY_ISSUES, key, json.dumps(i))
-            self._con.sadd(f"{self.KEY_PRIORITY}{i['priority']}", key)
-            if i.get("assignee") is not None:
-                self._con.sadd(f"{self.KEY_ASSIGNEE}{i['assignee']['uuid']}", key)
-        self._con.set(
-            self.KEY_ISSUES_ACTUAL, datetime.datetime.now().timestamp(), ex=self.ttl
-        )
+            for i in issues:
+                key = self._md5(i["links"]["self"]["href"])
+                await self._con.hset(self.KEY_ISSUES, key, json.dumps(i))
+                await self._con.sadd(f"{self.KEY_PRIORITY}{i['priority']}", key)
+                if i.get("assignee") is not None:
+                    await self._con.sadd(
+                        f"{self.KEY_ASSIGNEE}{i['assignee']['uuid']}", key
+                    )
+            await self._con.set(
+                self.KEY_ISSUES_ACTUAL, datetime.datetime.now().timestamp(), ex=self.ttl
+            )
 
     def _md5(self, val: str) -> str:
         return hashlib.md5(val.encode()).hexdigest()

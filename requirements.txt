@@ -1,4 +1,4 @@
-bitbucket-python==0.2.3
+bitbucket-python==0.3.1
 fastapi==0.95.0
 gunicorn==20.1.0
 pydantic==1.10.7
