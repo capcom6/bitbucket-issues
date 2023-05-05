@@ -79,7 +79,8 @@ jobs:
           ssh-add <(echo "${{ secrets.SSH_PRIVATE_KEY }}")
           terraform apply -auto-approve -input=false \
           -var 'swarm-manager-host=${{ secrets.SWARM_MANAGER_HOST }}' \
-          -var 'app-name=${{ vars.APP_NAME }}' -var 'app-host=${{ secrets.APP_HOST }}' \
+          -var 'app-name=${{ vars.APP_NAME }}' \
+          -var 'app-host=${{ secrets.APP_HOST }}' \
           -var 'app-auth=${{ secrets.APP_AUTH }}' \
           -var 'app-config-b64=${{ secrets.APP_CONFIG_B64 }}' \
           -var "app-version=${GITHUB_REF#refs/tags/v}" \
