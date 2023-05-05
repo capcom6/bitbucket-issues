@@ -71,6 +71,9 @@ jobs:
 
       - name: Deploy Docker service to Swarm
         working-directory: deployments/docker-swarm-terraform
+        env:
+          CPU_LIMIT: ${{ vars.CPU_LIMIT }}
+          MEMORY_LIMIT: ${{ vars.MEMORY_LIMIT }}
         run: |
           eval "$(ssh-agent -s)"
           ssh-add <(echo "${{ secrets.SSH_PRIVATE_KEY }}")
