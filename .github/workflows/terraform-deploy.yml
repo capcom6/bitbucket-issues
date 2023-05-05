@@ -13,9 +13,13 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.ref_type == 'tag'
 
     steps:
+      - name: Debug
+        run: |
+          echo ${{ github.ref_name }}
+          echo ${{ github.ref_type }}
+
       - name: Checkout code
         uses: actions/checkout@v3
 
