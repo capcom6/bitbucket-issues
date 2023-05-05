@@ -22,11 +22,25 @@ variable "app-host" {
 }
 
 variable "app-auth" {
-  type      = string
-  sensitive = true
+  type        = string
+  description = "User and password in htpasswd format"
+  sensitive   = true
 }
 
 variable "app-config-b64" {
-  type      = string
-  sensitive = true
+  type        = string
+  description = "Application config file, base64-encoded"
+  sensitive   = true
+}
+
+variable "cpu-limit" {
+  type        = number
+  description = "CPU limit in nanoseconds"
+  default     = 100000000
+}
+
+variable "memory-limit" {
+  type        = number
+  description = "Memory limit in bytes"
+  default     = 128000000
 }

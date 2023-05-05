@@ -42,8 +42,8 @@ resource "docker_service" "app" {
 
     resources {
       limits {
-        nano_cpus    = 100000000
-        memory_bytes = 128000000
+        nano_cpus    = var.cpu-limit
+        memory_bytes = var.memory-limit
       }
 
       reservation {
