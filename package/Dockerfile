@@ -1,4 +1,4 @@
-FROM python:3.9-alpine AS base
+FROM python:3.10-alpine AS base
 
 FROM base AS build
 
@@ -21,7 +21,7 @@ WORKDIR /app
 
 # RUN apk add libjpeg libstdc++ --no-cache
 # COPY --from=build /usr/lib/ /usr/lib/
-COPY --from=build /usr/local/lib/python3.9/site-packages/ /usr/local/lib/python3.9/site-packages/
+COPY --from=build /usr/local/lib/python3.10/site-packages/ /usr/local/lib/python3.10/site-packages/
 COPY --from=build /usr/local/bin/ /usr/local/bin/
 COPY scripts/docker-entrypoint.sh scripts/docker-healthcheck.sh ./
 RUN chmod +x ./docker-entrypoint.sh ./docker-healthcheck.sh

@@ -1,8 +1,24 @@
-bitbucket-python==0.3.1
-fastapi==0.109.1
-gunicorn==23.0.0
-pydantic==1.10.13
-python-dotenv==1.2.2
-PyYAML==6.0.1
-redis==4.5.4
-uvicorn==0.21.1
+-i https://pypi.org/simple
+anyio==4.4.0; python_version >= '3.8'
+bitbucket-python==0.3.1; python_version >= '3.7' and python_version < '4.0'
+certifi==2026.2.25; python_version >= '3.7'
+charset-normalizer==3.4.6; python_version >= '3.7'
+click==8.1.7; python_version >= '3.7'
+fastapi==0.109.1; python_version >= '3.8'
+gunicorn==23.0.0; python_version >= '3.7'
+h11==0.14.0; python_version >= '3.7'
+httpcore==0.16.3; python_version >= '3.7'
+httpx==0.23.3; python_version >= '3.7'
+idna==3.11; python_version >= '3.8'
+packaging==24.2; python_version >= '3.8'
+pydantic==1.10.13; python_version >= '3.7'
+python-dotenv==1.2.2; python_version >= '3.10'
+pyyaml==6.0.1; python_version >= '3.6'
+redis==4.5.4; python_version >= '3.7'
+requests==2.33.0; python_version >= '3.10'
+rfc3986[idna2008]==1.5.0
+sniffio==1.3.1; python_version >= '3.7'
+starlette==0.35.1; python_version >= '3.8'
+typing-extensions==4.12.2; python_version >= '3.8'
+urllib3==2.6.3; python_version >= '3.9'
+uvicorn==0.21.1; python_version >= '3.7'
